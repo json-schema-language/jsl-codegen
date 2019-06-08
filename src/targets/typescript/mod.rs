@@ -1,14 +1,31 @@
 use failure::Error;
+use inflector::Inflector;
 use jsl::schema::{Form, Type};
 use jsl::Schema;
 use std::collections::HashMap;
 use std::io::Write;
-use inflector::Inflector;
 
 pub fn render(out: &mut Write, schema: &Schema) -> Result<(), Error> {
     for (name, sub_schema) in schema.definitions().as_ref().unwrap() {
         let mut path = vec![name.clone()];
-        render_schema(out, &mut path, sub_schema)?;
+        let name = render_schema(out, &mut path, sub_schema)?;
+
+        match sub_schema.form() {
+            Form::Empty
+            | Form::Ref(_)
+            | Form::Type(_)
+            | Form::Elements(_)
+            | Form::Enum(_)
+            | Form::Values(_) => {
+                // These forms don't write out any types, but the "ref" form
+                // codegen presumes that definitions will always produce
+                // eponymous types.
+                //
+                // To handle this, we create a type alias here.
+                writeln!(out, "type {} = {};", path_to_identifier(&path), name)?;
+            }
+            _ => {}
+        }
     }
 
     let mut path = vec!["root".to_owned()];
@@ -40,6 +57,11 @@ fn render_schema(
             Ok(values.join(" | "))
         }
         Form::Properties(ref required, ref optional, _) => {
+            if let Some(comment) = schema.extra().get("description").and_then(|d| d.as_str()) {
+                for line in comment.split("\n") {
+                    writeln!(out, "// {}", line)?;
+                }
+            }
             render_interface(out, path, None, required, optional)
         }
         Form::Values(ref sub_schema) => {
@@ -53,9 +75,15 @@ fn render_schema(
 
                 match sub_schema.form() {
                     Form::Properties(ref required, ref optional, _) => {
-                        sub_names.push(render_interface(out, path, Some((tag.clone(), name.clone())), required, optional)?);
+                        sub_names.push(render_interface(
+                            out,
+                            path,
+                            Some((tag.clone(), name.clone())),
+                            required,
+                            optional,
+                        )?);
                     }
-                    _ => unreachable!("child of discriminator is not of properties form")
+                    _ => unreachable!("child of discriminator is not of properties form"),
                 }
 
                 path.pop();
@@ -79,7 +107,7 @@ fn render_interface(
 ) -> Result<String, Error> {
     let mut required_props = HashMap::new();
     if let Some((tag_name, tag_value)) = tag {
-        required_props.insert(tag_name, format!("\"{}\"", tag_value));
+        required_props.insert(tag_name, (format!("\"{}\"", tag_value), None));
     }
 
     for (name, sub_schema) in required {
@@ -87,7 +115,11 @@ fn render_interface(
         let sub_name = render_schema(out, path, sub_schema)?;
         path.pop();
 
-        required_props.insert(name.clone(), sub_name);
+        let comment = sub_schema
+            .extra()
+            .get("description")
+            .and_then(|d| d.as_str());
+        required_props.insert(name.clone(), (sub_name, comment));
     }
 
     let mut optional_props = HashMap::new();
@@ -96,17 +128,33 @@ fn render_interface(
         let sub_name = render_schema(out, path, sub_schema)?;
         path.pop();
 
-        optional_props.insert(name.clone(), sub_name);
+        let comment = sub_schema
+            .extra()
+            .get("description")
+            .and_then(|d| d.as_str());
+        optional_props.insert(name.clone(), (sub_name, comment));
     }
 
     let name = path_to_identifier(path);
     writeln!(out, "interface {} {{", name)?;
 
-    for (name, prop) in required_props {
+    for (name, (prop, comment)) in required_props {
+        if let Some(comment) = comment {
+            for line in comment.split("\n") {
+                writeln!(out, "  // {}", line)?;
+            }
+        }
+
         writeln!(out, "  {}: {};", name, prop)?;
     }
 
-    for (name, prop) in optional_props {
+    for (name, (prop, comment)) in optional_props {
+        if let Some(comment) = comment {
+            for line in comment.split("\n") {
+                writeln!(out, "  // {}", line)?;
+            }
+        }
+
         writeln!(out, "  {}?: {};", name, prop)?;
     }
 

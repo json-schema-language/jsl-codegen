@@ -1,0 +1,56 @@
+{
+  "definitions": {
+    "activity": {
+      "discriminator": {
+        "tag": "activity_type",
+        "mapping": {
+          "Changed Name": {
+            "properties": {
+              "old_name": { "type": "string" },
+              "new_name": { "type": "string" }
+            }
+          },
+          "Liked Picture": {
+            "properties": {
+              "picture_id": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "create_time": {
+      "type": "timestamp"
+    },
+    "update_time": {
+      "type": "timestamp"
+    },
+    "roles": {
+      "elements": {
+        "type": "string"
+      }
+    },
+    "labels": {
+      "values": {
+        "type": "string"
+      }
+    },
+    "recent_activity": {
+      "elements": {
+        "ref": "activity"
+      }
+    }
+  },
+  "optionalProperties": {
+    "delete_time": {
+      "type": "timestamp"
+    }
+  }
+}

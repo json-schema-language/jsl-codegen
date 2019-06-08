@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 clap = "2.33"
-jsl = { path = "../json-schema-language-rust" }
+jsl = "0.2.2"
 failure = "0.1"
 serde_json = "1.0"
 url = "1.7"
