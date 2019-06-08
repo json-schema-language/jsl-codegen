@@ -1,0 +1,63 @@
+{
+  "definitions": {
+    "a": {
+      "properties": {
+        "a": { "type": "string" }
+      },
+      "optionalProperties": {
+        "b": { "type": "string" }
+      }
+    }
+  },
+  "properties": {
+    "a": { "type": "boolean" },
+    "b": { "type": "number" },
+    "c": { "type": "string" },
+    "d": { "type": "timestamp" },
+    "e": { "enum": ["foo", "bar", "baz"] },
+    "f": {
+      "elements": {
+        "properties": {
+          "a": { "type": "string" }
+        },
+        "optionalProperties": {
+          "b": { "type": "string" }
+        }
+      }
+    },
+    "g": {
+      "values": {
+        "properties": {
+          "a": { "type": "string" }
+        },
+        "optionalProperties": {
+          "b": { "type": "string" }
+        }
+      }
+    },
+    "h": {
+      "discriminator": {
+        "tag": "tag",
+        "mapping": {
+          "foo": {
+            "properties": {
+              "a": { "type": "string" }
+            },
+            "optionalProperties": {
+              "b": { "type": "string" }
+            }
+          },
+          "bar": {
+            "properties": {
+              "a": { "type": "number" }
+            },
+            "optionalProperties": {
+              "b": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "i": { "ref": "a" }
+  }
+}
