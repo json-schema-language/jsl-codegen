@@ -1,11 +1,50 @@
-use failure::Error;
+use failure::{format_err, Error};
 use inflector::Inflector;
 use jsl::schema::{Form, Type};
 use jsl::Schema;
 use std::collections::HashMap;
-use std::io::Write;
+use std::fs::File;
 
-pub fn render(out: &mut Write, schema: &Schema) -> Result<(), Error> {
+use std::io::{BufWriter, Write};
+use std::path::PathBuf;
+pub struct Config {
+    pub out_dir: String,
+    pub in_file: String,
+    pub out_file: Option<String>,
+}
+
+pub fn codegen(config: &Config, schema: &Schema) -> Result<(), Error> {
+    // The strategy for generating TypeScript code is as follows:
+    //
+    // All code is generated into a single .ts file, whose name is inferred from
+    // config.InFile and is appended to OutDir, unless a FileName is explictly
+    // set.
+    //
+    // Each definition is generated as a type with the same name as the
+    // definition, except with the case changed to be TypeScript-idiomatic. Then
+    // we generate the root schema. Only properties and discriminator forms get
+    // their own types, everything else is merely embedded directly into the
+    // parent data structure.
+    let in_file = PathBuf::from(&config.in_file);
+    let in_file_stem = in_file.file_stem().ok_or(format_err!(
+        "Could not determine file stem from input file."
+    ))?;
+    let in_file_stem = in_file_stem
+        .to_str()
+        .ok_or(format_err!("Could not convert file name to string."))?;
+    let inferred_file_out = format!("{}.ts", in_file_stem);
+    let file_name_out = config.out_file.as_ref().unwrap_or(&inferred_file_out);
+
+    let out_path = PathBuf::from(&config.out_dir).join(file_name_out);
+
+
+    let mut out = BufWriter::new(File::create(out_path)?);
+    render(&mut out, in_file_stem, schema)?;
+
+    Ok(())
+}
+
+fn render(out: &mut Write, root_name: &str, schema: &Schema) -> Result<(), Error> {
     for (name, sub_schema) in schema.definitions().as_ref().unwrap() {
         let mut path = vec![name.clone()];
         let name = render_schema(out, &mut path, sub_schema)?;
@@ -22,13 +61,13 @@ pub fn render(out: &mut Write, schema: &Schema) -> Result<(), Error> {
                 // eponymous types.
                 //
                 // To handle this, we create a type alias here.
-                writeln!(out, "type {} = {};", path_to_identifier(&path), name)?;
+                writeln!(out, "export type {} = {};", path_to_identifier(&path), name)?;
             }
             _ => {}
         }
     }
 
-    let mut path = vec!["root".to_owned()];
+    let mut path = vec![root_name.to_owned()];
     let root = render_schema(out, &mut path, schema)?;
     writeln!(out, "export default {};", root)?;
 
@@ -90,7 +129,7 @@ fn render_schema(
             }
 
             let name = path_to_identifier(path);
-            writeln!(out, "type {} = {};", name, sub_names.join(" | "))?;
+            writeln!(out, "export type {} = {};", name, sub_names.join(" | "))?;
             Ok(name)
         }
     }
@@ -136,7 +175,7 @@ fn render_interface(
     }
 
     let name = path_to_identifier(path);
-    writeln!(out, "interface {} {{", name)?;
+    writeln!(out, "export interface {} {{", name)?;
 
     for (name, (prop, comment)) in required_props {
         if let Some(comment) = comment {
