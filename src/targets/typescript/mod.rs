@@ -4,9 +4,9 @@ use jsl::schema::{Form, Type};
 use jsl::Schema;
 use std::collections::HashMap;
 use std::fs::File;
-
 use std::io::{BufWriter, Write};
 use std::path::PathBuf;
+
 pub struct Config {
     pub out_dir: String,
     pub in_file: String,
