@@ -37,7 +37,6 @@ pub fn codegen(config: &Config, schema: &Schema) -> Result<(), Error> {
 
     let out_path = PathBuf::from(&config.out_dir).join(file_name_out);
 
-
     let mut out = BufWriter::new(File::create(out_path)?);
     render(&mut out, in_file_stem, schema)?;
 
