@@ -4,7 +4,7 @@ use clap::{App, Arg};
 use failure::Error;
 use jsl::{Schema, SerdeSchema};
 use std::fs::File;
-use std::io::{BufWriter, Write};
+use failure::format_err;
 
 fn main() -> Result<(), Error> {
     let matches = App::new("JSON Schema Language Codegen")
@@ -34,6 +34,12 @@ fn main() -> Result<(), Error> {
                 .takes_value(true)
                 .long("java-out"),
         )
+        .arg(
+            Arg::with_name("java-pkg")
+                .help("Java output package.")
+                .takes_value(true)
+                .long("java-pkg"),
+        )
         .get_matches();
 
     let input = matches.value_of("INPUT").unwrap();
@@ -49,17 +55,18 @@ fn main() -> Result<(), Error> {
         };
 
         targets::typescript::codegen(&config, &schema)?;
-
-        // let out_writer: Box<Write> = match out {
-        //     "-" => Box::new(std::io::stdout()),
-        //     _ => Box::new(File::create(out)?),
-        // };
-
-        // targets::typescript::render(&mut BufWriter::new(out_writer), &schema)?;
     }
 
     if let Some(out) = matches.value_of("java-out") {
-        println!("Output to java: {}", out);
+        let out_pkg = matches.value_of("java-pkg").ok_or(format_err!("--java-pkg is required when java-out is set"))?;
+
+        let config = targets::java::Config {
+            out_dir: out.into(),
+            in_file: input.into(),
+            out_pkg: out_pkg.to_owned(),
+        };
+
+        targets::java::codegen(&config, &schema)?;
     }
 
     Ok(())
