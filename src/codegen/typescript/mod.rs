@@ -34,7 +34,7 @@ impl codegen::Codegen for Codegen {
             let input_stem_str = input_stem
                 .to_str()
                 .ok_or(format_err!("Could not convert input file name to UTF-8"))?;
-            let root_name = input_stem_str.to_class_case();
+            let root_name = input_stem_str.to_pascal_case();
             let out_file_name = format!("{}.ts", root_name);
 
             Ok(Some(Codegen {
@@ -228,7 +228,7 @@ impl Codegen {
     }
 
     fn path_to_identifier(path: &[String]) -> String {
-        path.join("_").to_class_case()
+        path.join("_").to_pascal_case()
     }
 }
 

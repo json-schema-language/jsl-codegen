@@ -20,6 +20,7 @@ fn main() -> Result<(), Error> {
     // Set up the CLI for each of the code generators.
     let app = codegen::typescript::Codegen::args(app);
     let app = codegen::java::Codegen::args(app);
+    let app = codegen::go::Codegen::args(app);
 
     // Parse out the input args.
     let matches = app.get_matches();
@@ -27,6 +28,7 @@ fn main() -> Result<(), Error> {
     // Prepare the code generators from the input args.
     let ts_codegen = codegen::typescript::Codegen::from_args(&matches)?;
     let java_codegen = codegen::java::Codegen::from_args(&matches)?;
+    let go_codegen = codegen::go::Codegen::from_args(&matches)?;
 
     // Parse out the input schema, and ensure it is valid.
     let input = matches.value_of("INPUT").unwrap();
@@ -46,6 +48,11 @@ fn main() -> Result<(), Error> {
     } else {
         None
     };
+    let go_ast = if let Some(ref cg) = go_codegen {
+        Some(cg.transform(&schema)?)
+    } else {
+        None
+    };
 
     // Serialize each of the ASTs. At this point, only IO errors can cause
     // issues. That's sort of an inevitable state of affairs.
@@ -54,6 +61,9 @@ fn main() -> Result<(), Error> {
     }
     if let Some(ref cg) = java_codegen {
         cg.serialize(&java_ast.unwrap())?;
+    }
+    if let Some(ref cg) = go_codegen {
+        cg.serialize(&go_ast.unwrap())?;
     }
 
     Ok(())
