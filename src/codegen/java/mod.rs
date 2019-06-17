@@ -157,7 +157,7 @@ impl Codegen {
             Form::Values(ref sub_schema) => {
                 JavaType::Map(Box::new(self.transform_subschema(out, path, sub_schema)))
             }
-            Form::Discriminator(ref tag, ref mapping) => {
+            Form::Discriminator(_, _) => {
                 JavaType::Object // TODO
             }
         }
