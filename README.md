@@ -57,7 +57,7 @@ But using the same exact schema, you can also generate some Java:
 public class User {
   public String name;
   public boolean isAdmin;
-  public List<double> favoriteNumbers;
+  public List<Double> favoriteNumbers;
 }
 ```
 
