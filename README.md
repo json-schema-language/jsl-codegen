@@ -78,8 +78,8 @@ once. As a consequence, all of the following parameters can be provided
 simultaneously.
 
 ```text
-JSON Schema Language Codegen 1.0
-Generates code from a JSON Schema Language schema.
+jsl-codegen 1.0
+Generates code from a JSON Schema Language schema
 
 USAGE:
     jsl-codegen [OPTIONS] [--] <INPUT>
@@ -89,11 +89,11 @@ FLAGS:
     -V, --version    Prints version information
 
 OPTIONS:
-        --java-out <java-out>    Java output directory.
-        --java-pkg <java-pkg>    Java output package.
-        --ts-file <ts-file>      Force a TypeScript file name, rather than inferring.
-        --ts-out <ts-out>        TypeScript output directory.
+        --go-out <go-out>        Go output directory
+        --java-out <java-out>    Java output directory
+        --java-pkg <java-pkg>    Java output package
+        --ts-out <ts-out>        TypeScript output directory
 
 ARGS:
-    <INPUT>    Input JSON Schema Language schema
+    <INPUT>    Input JSON Schema Language schema file
 ```
